@@ -5,6 +5,7 @@ use serde::Serialize;
 struct BluetoothDevice {
     id: String,
     name: String,
+    address: String,
     kind: String,
     status: String,
     battery: Option<u8>,
@@ -59,6 +60,7 @@ fn get_device_snapshot() -> DeviceSnapshot {
             BluetoothDevice {
                 id: "airpods-pro".into(),
                 name: "AirPods Pro".into(),
+                address: "F8:4E:17:91:2C:A0".into(),
                 kind: "Headphones".into(),
                 status: "Connected".into(),
                 battery: Some(84),
@@ -70,6 +72,7 @@ fn get_device_snapshot() -> DeviceSnapshot {
             BluetoothDevice {
                 id: "mx-master".into(),
                 name: "MX Master 3S".into(),
+                address: "C4:34:6B:57:11:2D".into(),
                 kind: "Mouse".into(),
                 status: "Connected".into(),
                 battery: Some(71),
@@ -81,6 +84,7 @@ fn get_device_snapshot() -> DeviceSnapshot {
             BluetoothDevice {
                 id: "keychron".into(),
                 name: "Keychron K3".into(),
+                address: "A1:09:E3:44:90:7B".into(),
                 kind: "Keyboard".into(),
                 status: "Paired".into(),
                 battery: Some(64),
@@ -92,6 +96,7 @@ fn get_device_snapshot() -> DeviceSnapshot {
             BluetoothDevice {
                 id: "speaker".into(),
                 name: "HomePod mini".into(),
+                address: "08:B6:1F:03:E2:5C".into(),
                 kind: "Speaker".into(),
                 status: "Available".into(),
                 battery: None,

@@ -10,13 +10,22 @@
     "frontendDist": "../dist"
   },
   "app": {
+    "macOSPrivateApi": true,
     "windows": [
       {
         "title": "Win Bluetooth Manager",
-        "width": 1120,
-        "height": 760,
-        "minWidth": 980,
-        "minHeight": 680
+        "width": 416,
+        "height": 512,
+        "minWidth": 416,
+        "minHeight": 512,
+        "maxWidth": 416,
+        "maxHeight": 512,
+        "center": true,
+        "decorations": false,
+        "resizable": false,
+        "transparent": true,
+        "shadow": true,
+        "backgroundColor": [0, 0, 0, 0]
       }
     ],
     "security": {

@@ -1,12 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import "./App.css";
 
 type DeviceStatus = "Connected" | "Paired" | "Available";
+type ViewMode = "list" | "detail";
 
 type BluetoothDevice = {
   id: string;
   name: string;
+  address: string;
   kind: string;
   status: DeviceStatus;
   battery: number | null;
@@ -36,6 +38,14 @@ type DeviceSnapshot = {
   airpods: AirPodsStatus;
 };
 
+type NativeBluetoothDevice = Omit<BluetoothDevice, "address"> & {
+  address?: string;
+};
+
+type NativeDeviceSnapshot = Omit<DeviceSnapshot, "devices"> & {
+  devices: NativeBluetoothDevice[];
+};
+
 const fallbackSnapshot: DeviceSnapshot = {
   adapterName: "Intel Wireless Bluetooth",
   adapterState: "Ready",
@@ -55,6 +65,7 @@ const fallbackSnapshot: DeviceSnapshot = {
     {
       id: "airpods-pro",
       name: "AirPods Pro",
+      address: "F8:4E:17:91:2C:A0",
       kind: "Headphones",
       status: "Connected",
       battery: 84,
@@ -66,6 +77,7 @@ const fallbackSnapshot: DeviceSnapshot = {
     {
       id: "mx-master",
       name: "MX Master 3S",
+      address: "C4:34:6B:57:11:2D",
       kind: "Mouse",
       status: "Connected",
       battery: 71,
@@ -77,6 +89,7 @@ const fallbackSnapshot: DeviceSnapshot = {
     {
       id: "keychron",
       name: "Keychron K3",
+      address: "A1:09:E3:44:90:7B",
       kind: "Keyboard",
       status: "Paired",
       battery: 64,
@@ -88,6 +101,7 @@ const fallbackSnapshot: DeviceSnapshot = {
     {
       id: "speaker",
       name: "HomePod mini",
+      address: "08:B6:1F:03:E2:5C",
       kind: "Speaker",
       status: "Available",
       battery: null,
@@ -99,34 +113,89 @@ const fallbackSnapshot: DeviceSnapshot = {
   ],
 };
 
-const navItems = [
-  { label: "Devices", icon: "bluetooth", active: true },
-  { label: "AirPods", icon: "airpods", active: false },
-  { label: "Audio", icon: "audio", active: false },
-  { label: "Automation", icon: "spark", active: false },
-];
+const statusCopy: Record<DeviceStatus, string> = {
+  Connected: "已连接",
+  Paired: "历史连接",
+  Available: "可连接",
+};
+
+function normalizeSnapshot(snapshot: NativeDeviceSnapshot): DeviceSnapshot {
+  return {
+    ...snapshot,
+    devices: snapshot.devices.map((device, index) => ({
+      ...device,
+      address: device.address ?? fallbackSnapshot.devices[index]?.address ?? makePreviewAddress(device.id, index),
+    })),
+  };
+}
+
+function makePreviewAddress(id: string, index: number) {
+  const seed = Array.from(id).reduce((sum, char) => sum + char.charCodeAt(0), index * 19);
+  return Array.from({ length: 6 }, (_, byteIndex) =>
+    ((seed + byteIndex * 37) % 256).toString(16).padStart(2, "0").toUpperCase(),
+  ).join(":");
+}
+
+async function withCurrentWindow(action: "close" | "minimize" | "startDragging") {
+  if (!("__TAURI_INTERNALS__" in window)) return;
+
+  try {
+    const { getCurrentWindow } = await import("@tauri-apps/api/window");
+    await getCurrentWindow()[action]();
+  } catch {
+    // Browser preview has no native window to control.
+  }
+}
+
+async function ensureTransparentWindow() {
+  if (!("__TAURI_INTERNALS__" in window)) return;
+
+  try {
+    const [{ getCurrentWindow }, { getCurrentWebviewWindow }] = await Promise.all([
+      import("@tauri-apps/api/window"),
+      import("@tauri-apps/api/webviewWindow"),
+    ]);
+    const currentWindow = getCurrentWindow();
+    await currentWindow.setBackgroundColor([0, 0, 0, 0]);
+    await getCurrentWebviewWindow().setBackgroundColor([0, 0, 0, 0]).catch(() => undefined);
+    await currentWindow.setShadow(true);
+  } catch {
+    // Browser preview has no native window to tune.
+  }
+}
 
 function App() {
   const [snapshot, setSnapshot] = useState<DeviceSnapshot>(fallbackSnapshot);
-  const [selectedId, setSelectedId] = useState("airpods-pro");
+  const [selectedId, setSelectedId] = useState(fallbackSnapshot.devices[0]?.id ?? "");
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [showAirpodsCard, setShowAirpodsCard] = useState(fallbackSnapshot.airpods.connected);
+  const [openActionId, setOpenActionId] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [toast, setToast] = useState("Ready");
+  const [toast, setToast] = useState("蓝牙已就绪");
+  const [airpodsDismissed, setAirpodsDismissed] = useState(false);
 
   const selectedDevice = useMemo(
     () => snapshot.devices.find((device) => device.id === selectedId) ?? snapshot.devices[0],
     [selectedId, snapshot.devices],
   );
 
+  const connectedDevice = useMemo(
+    () => snapshot.devices.find((device) => device.status === "Connected"),
+    [snapshot.devices],
+  );
+
   async function refreshSnapshot() {
     setIsRefreshing(true);
     try {
-      const nextSnapshot = await invoke<DeviceSnapshot>("get_device_snapshot");
-      setSnapshot(nextSnapshot);
-      setToast("Device snapshot refreshed");
+      const nextSnapshot = await invoke<NativeDeviceSnapshot>("get_device_snapshot");
+      const normalizedSnapshot = normalizeSnapshot(nextSnapshot);
+      setSnapshot(normalizedSnapshot);
+      setSelectedId((currentId) => currentId || normalizedSnapshot.devices[0]?.id || "");
+      setToast("已刷新设备列表");
     } catch {
-      setToast("Using preview data until Windows APIs are connected");
+      setToast("当前使用预览数据");
     } finally {
-      setTimeout(() => setIsRefreshing(false), 260);
+      window.setTimeout(() => setIsRefreshing(false), 260);
     }
   }
 
@@ -135,197 +204,441 @@ function App() {
       const message = await invoke<string>(action, { deviceId });
       setToast(message);
     } catch {
-      setToast("Native command is not available in browser preview");
+      setToast("原生命令暂不可用，已在界面模拟");
     }
   }
 
+  function updateDeviceStatus(deviceId: string, status: DeviceStatus) {
+    setSnapshot((current) => ({
+      ...current,
+      devices: current.devices.map((device) => (device.id === deviceId ? { ...device, status, lastSeen: "Now" } : device)),
+      airpods:
+        current.devices.find((device) => device.id === deviceId)?.isAirpods === true
+          ? { ...current.airpods, connected: status === "Connected" }
+          : current.airpods,
+    }));
+  }
+
+  function handleToggleConnection(device: BluetoothDevice) {
+    const isConnected = device.status === "Connected";
+    updateDeviceStatus(device.id, isConnected ? "Paired" : "Connected");
+    void queueAction(isConnected ? "disconnect_device" : "connect_device", device.id);
+    setToast(isConnected ? `已断开 ${device.name}` : `正在连接 ${device.name}`);
+    if (!isConnected && device.isAirpods) {
+      setAirpodsDismissed(false);
+      setShowAirpodsCard(true);
+      setViewMode("list");
+    }
+  }
+
+  function handleDeleteDevice(deviceId: string) {
+    const deviceName = snapshot.devices.find((device) => device.id === deviceId)?.name ?? "设备";
+    setSnapshot((current) => {
+      const nextDevices = current.devices.filter((device) => device.id !== deviceId);
+      return {
+        ...current,
+        devices: nextDevices,
+        airpods:
+          current.devices.find((device) => device.id === deviceId)?.isAirpods === true
+            ? { ...current.airpods, connected: false }
+            : current.airpods,
+      };
+    });
+    if (selectedId === deviceId) {
+      const nextDevice = snapshot.devices.find((device) => device.id !== deviceId);
+      setSelectedId(nextDevice?.id ?? "");
+      setViewMode("list");
+    }
+    setOpenActionId(null);
+    setToast(`已删除 ${deviceName}`);
+  }
+
+  function openDetail(deviceId: string) {
+    setSelectedId(deviceId);
+    setViewMode("detail");
+    setOpenActionId(null);
+  }
+
   useEffect(() => {
-    refreshSnapshot();
+    void refreshSnapshot();
+    void ensureTransparentWindow();
   }, []);
 
+  const shouldShowAirpodsCard = showAirpodsCard && snapshot.airpods.connected && !airpodsDismissed;
+
   return (
-    <main className="shell">
-      <aside className="sidebar" aria-label="Primary navigation">
-        <div className="traffic-lights" aria-hidden="true">
-          <span className="traffic-dot close" />
-          <span className="traffic-dot minimize" />
-          <span className="traffic-dot zoom" />
-        </div>
+    <main className="stage">
+      <section className="phone-popover" aria-label="蓝牙管理">
+        <WindowBar
+          onClose={() => {
+            void withCurrentWindow("close");
+          }}
+          onMinimize={() => {
+            void withCurrentWindow("minimize");
+          }}
+          onStartDrag={() => {
+            void withCurrentWindow("startDragging");
+          }}
+        />
 
-        <div className="brand-lockup">
-          <div className="brand-mark" aria-hidden="true">
-            <BluetoothIcon />
-          </div>
-          <div>
-            <p className="eyebrow">Control Center</p>
-            <h1>Bluetooth</h1>
-          </div>
-        </div>
+        {shouldShowAirpodsCard ? (
+          <AirPodsConnectCard
+            airpods={snapshot.airpods}
+            outputName={snapshot.activeOutput}
+            onClose={() => {
+              setAirpodsDismissed(true);
+              setShowAirpodsCard(false);
+              setToast("已关闭 AirPods 弹窗");
+            }}
+          />
+        ) : (
+          <>
+            {viewMode === "list" ? (
+              <DeviceList
+                adapterName={snapshot.adapterName}
+                adapterState={snapshot.adapterState}
+                connectedDevice={connectedDevice}
+                devices={snapshot.devices}
+                isRefreshing={isRefreshing}
+                openActionId={openActionId}
+                onDelete={handleDeleteDevice}
+                onOpenActions={setOpenActionId}
+                onOpenDetail={openDetail}
+                onRefresh={refreshSnapshot}
+                onToggle={handleToggleConnection}
+              />
+            ) : (
+              <DeviceDetail
+                device={selectedDevice}
+                onBack={() => setViewMode("list")}
+                onConnect={handleToggleConnection}
+                onDelete={handleDeleteDevice}
+                onUseAudio={(deviceId) => {
+                  void queueAction("set_audio_output", deviceId);
+                  setToast("已切换音频输出");
+                }}
+              />
+            )}
 
-        <nav className="nav-list">
-          {navItems.map((item) => (
-            <button className={`nav-item ${item.active ? "active" : ""}`} key={item.label}>
-              <NavIcon name={item.icon} />
-              <span>{item.label}</span>
-            </button>
-          ))}
-        </nav>
-
-        <div className="adapter-card">
-          <div className="adapter-status">
-            <span className="pulse-dot" />
-            <span>{snapshot.adapterState}</span>
-          </div>
-          <strong>{snapshot.adapterName}</strong>
-          <p>{snapshot.discoverable ? "Visible to nearby devices" : "Hidden from new devices"}</p>
-        </div>
-      </aside>
-
-      <section className="workspace">
-        <header className="topbar">
-          <div>
-            <p className="eyebrow">Windows device manager</p>
-            <h2>Paired devices</h2>
-          </div>
-          <div className="topbar-actions">
-            <button className="icon-button" type="button" aria-label="Search devices">
-              <SearchIcon />
-            </button>
-            <button className="primary-button" type="button" onClick={refreshSnapshot}>
-              <RefreshIcon active={isRefreshing} />
-              <span>{isRefreshing ? "Scanning" : "Scan"}</span>
-            </button>
-          </div>
-        </header>
-
-        <div className="content-grid">
-          <section className="device-column" aria-label="Bluetooth devices">
-            <div className="section-heading">
-              <div>
-                <h3>Nearby</h3>
-                <p>{snapshot.devices.length} devices in range</p>
-              </div>
-              <span className="soft-pill">Live</span>
-            </div>
-
-            <div className="device-list">
-              {snapshot.devices.map((device) => (
-                <button
-                  className={`device-row ${device.id === selectedDevice?.id ? "selected" : ""}`}
-                  key={device.id}
-                  type="button"
-                  onClick={() => setSelectedId(device.id)}
-                >
-                  <DeviceGlyph kind={device.kind} isAirpods={device.isAirpods} />
-                  <span className="device-copy">
-                    <span className="device-name">{device.name}</span>
-                    <span className="device-meta">
-                      {device.kind} · {device.lastSeen}
-                    </span>
-                  </span>
-                  <span className="device-signals">
-                    <StatusPill status={device.status} />
-                    <span className="battery-text">
-                      {device.battery === null ? "AC" : `${device.battery}%`}
-                    </span>
-                  </span>
-                </button>
-              ))}
-            </div>
-          </section>
-
-          <section className="detail-column" aria-label="Selected device controls">
-            <div className="airpods-panel">
-              <div className="airpods-hero">
-                <div>
-                  <p className="eyebrow">Featured device</p>
-                  <h3>{snapshot.airpods.model}</h3>
-                  <p className="muted">
-                    {snapshot.airpods.connected ? "Connected for media output" : "Ready to connect"}
-                  </p>
-                </div>
-                <AirPodsIllustration />
-              </div>
-
-              <div className="battery-grid" aria-label="AirPods battery levels">
-                <BatteryCell label="Left" value={snapshot.airpods.leftBattery} />
-                <BatteryCell label="Right" value={snapshot.airpods.rightBattery} />
-                <BatteryCell label="Case" value={snapshot.airpods.caseBattery} />
-              </div>
-
-              <div className="segmented-control" aria-label="Noise control">
-                {["Off", "Transparency", snapshot.airpods.noiseMode].map((mode) => (
-                  <button className={mode === snapshot.airpods.noiseMode ? "selected" : ""} key={mode} type="button">
-                    {mode}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="detail-panel">
-              <div className="section-heading compact">
-                <div>
-                  <h3>{selectedDevice?.name}</h3>
-                  <p>{selectedDevice?.kind}</p>
-                </div>
-                {selectedDevice && <StatusPill status={selectedDevice.status} />}
-              </div>
-
-              <div className="metrics">
-                <Metric label="Signal" value={`${selectedDevice?.signal ?? 0}%`} />
-                <Metric label="Battery" value={selectedDevice?.battery === null ? "AC" : `${selectedDevice?.battery}%`} />
-                <Metric label="Audio" value={selectedDevice?.audioRole ?? "None"} />
-              </div>
-
-              <div className="action-strip">
-                <button
-                  className="secondary-button"
-                  type="button"
-                  onClick={() =>
-                    selectedDevice &&
-                    queueAction(selectedDevice.status === "Connected" ? "disconnect_device" : "connect_device", selectedDevice.id)
-                  }
-                >
-                  <PowerIcon />
-                  <span>{selectedDevice?.status === "Connected" ? "Disconnect" : "Connect"}</span>
-                </button>
-                <button
-                  className="secondary-button"
-                  type="button"
-                  onClick={() => selectedDevice && queueAction("set_audio_output", selectedDevice.id)}
-                >
-                  <AudioIcon />
-                  <span>Use for audio</span>
-                </button>
-              </div>
-            </div>
-
-            <div className="audio-panel">
-              <div>
-                <p className="eyebrow">Audio route</p>
-                <h3>{snapshot.activeOutput}</h3>
-                <p className="muted">Input: {snapshot.activeInput}</p>
-              </div>
-              <div className="route-meter" aria-hidden="true">
-                <span />
-                <span />
-                <span />
-                <span />
-              </div>
-            </div>
-          </section>
-        </div>
-
-        <p className="toast" role="status">
-          {toast}
-        </p>
+            <p className="toast" role="status">
+              {toast}
+            </p>
+          </>
+        )}
       </section>
     </main>
   );
 }
 
-function StatusPill({ status }: { status: DeviceStatus }) {
-  return <span className={`status-pill ${status.toLowerCase()}`}>{status}</span>;
+function WindowBar({
+  onClose,
+  onMinimize,
+  onStartDrag,
+}: {
+  onClose: () => void;
+  onMinimize: () => void;
+  onStartDrag: () => void;
+}) {
+  return (
+    <div className="window-bar" onPointerDown={onStartDrag}>
+      <div className="window-controls" aria-label="窗口操作" onPointerDown={(event) => event.stopPropagation()}>
+        <button className="window-control close" type="button" aria-label="关闭窗口" onClick={onClose} />
+        <button className="window-control minimize" type="button" aria-label="最小化窗口" onClick={onMinimize} />
+      </div>
+      <div className="popover-grabber" aria-hidden="true" />
+    </div>
+  );
+}
+
+function DeviceList({
+  adapterName,
+  adapterState,
+  connectedDevice,
+  devices,
+  isRefreshing,
+  openActionId,
+  onDelete,
+  onOpenActions,
+  onOpenDetail,
+  onRefresh,
+  onToggle,
+}: {
+  adapterName: string;
+  adapterState: string;
+  connectedDevice?: BluetoothDevice;
+  devices: BluetoothDevice[];
+  isRefreshing: boolean;
+  openActionId: string | null;
+  onDelete: (deviceId: string) => void;
+  onOpenActions: (deviceId: string | null) => void;
+  onOpenDetail: (deviceId: string) => void;
+  onRefresh: () => void;
+  onToggle: (device: BluetoothDevice) => void;
+}) {
+  return (
+    <>
+      <header className="popover-header">
+        <div>
+          <p className="eyebrow">{adapterState === "Ready" ? "已开启" : adapterState}</p>
+          <h1>蓝牙</h1>
+        </div>
+        <button className="icon-button" type="button" aria-label="刷新蓝牙设备" onClick={onRefresh}>
+          <RefreshIcon active={isRefreshing} />
+        </button>
+      </header>
+
+      <section className="connection-summary" aria-label="当前连接">
+        <div className="summary-icon" aria-hidden="true">
+          <BluetoothIcon />
+        </div>
+        <div>
+          <span>当前连接</span>
+          <strong>{connectedDevice?.name ?? "未连接"}</strong>
+          <p>{adapterName}</p>
+        </div>
+      </section>
+
+      <section className="list-section" aria-label="连接列表">
+        <div className="section-title">
+          <h2>连接列表</h2>
+          <span>{devices.length} 台</span>
+        </div>
+
+        <div className="device-list">
+          {devices.map((device) => (
+            <SwipeDeviceRow
+              device={device}
+              isActionsOpen={openActionId === device.id}
+              key={device.id}
+              onDelete={() => onDelete(device.id)}
+              onOpenActions={() => onOpenActions(openActionId === device.id ? null : device.id)}
+              onOpenDetail={() => onOpenDetail(device.id)}
+              onToggle={() => onToggle(device)}
+            />
+          ))}
+        </div>
+      </section>
+    </>
+  );
+}
+
+function SwipeDeviceRow({
+  device,
+  isActionsOpen,
+  onDelete,
+  onOpenActions,
+  onOpenDetail,
+  onToggle,
+}: {
+  device: BluetoothDevice;
+  isActionsOpen: boolean;
+  onDelete: () => void;
+  onOpenActions: () => void;
+  onOpenDetail: () => void;
+  onToggle: () => void;
+}) {
+  const swipeStartX = useRef<number | null>(null);
+  const ignoreNextClick = useRef(false);
+
+  function handlePointerUp(event: React.PointerEvent<HTMLButtonElement>) {
+    if (swipeStartX.current === null) return;
+    const deltaX = event.clientX - swipeStartX.current;
+    swipeStartX.current = null;
+
+    if (Math.abs(deltaX) > 34) {
+      ignoreNextClick.current = true;
+      onOpenActions();
+    }
+  }
+
+  function handleOpenDetail() {
+    if (ignoreNextClick.current) {
+      ignoreNextClick.current = false;
+      return;
+    }
+
+    if (isActionsOpen) {
+      onOpenActions();
+    } else {
+      onOpenDetail();
+    }
+  }
+
+  return (
+    <div className={`swipe-row ${isActionsOpen ? "actions-open" : ""}`}>
+      <button className="delete-action" type="button" tabIndex={isActionsOpen ? 0 : -1} onClick={onDelete}>
+        删除
+      </button>
+      <div className="row-surface">
+        <button
+          className="row-main"
+          type="button"
+          onClick={handleOpenDetail}
+          onPointerDown={(event) => {
+            swipeStartX.current = event.clientX;
+          }}
+          onPointerCancel={() => {
+            swipeStartX.current = null;
+          }}
+          onPointerUp={handlePointerUp}
+        >
+          <DeviceGlyph kind={device.kind} isAirpods={device.isAirpods} />
+          <span className="device-copy">
+            <span className="device-name">{device.name}</span>
+            <span className="device-meta">
+              {statusCopy[device.status]} · {device.lastSeen}
+            </span>
+          </span>
+        </button>
+        <ConnectionSwitch
+          checked={device.status === "Connected"}
+          label={`${device.name} ${device.status === "Connected" ? "断开" : "连接"}`}
+          onChange={() => {
+            onToggle();
+          }}
+        />
+      </div>
+      <button className="swipe-hint" type="button" aria-label={`显示 ${device.name} 删除按钮`} onClick={onOpenActions}>
+        <ChevronLeftIcon />
+      </button>
+    </div>
+  );
+}
+
+function DeviceDetail({
+  device,
+  onBack,
+  onConnect,
+  onDelete,
+  onUseAudio,
+}: {
+  device?: BluetoothDevice;
+  onBack: () => void;
+  onConnect: (device: BluetoothDevice) => void;
+  onDelete: (deviceId: string) => void;
+  onUseAudio: (deviceId: string) => void;
+}) {
+  if (!device) {
+    return (
+      <section className="empty-state">
+        <button className="nav-button" type="button" onClick={onBack}>
+          <ChevronLeftIcon />
+          返回
+        </button>
+        <p>没有可显示的蓝牙设备</p>
+      </section>
+    );
+  }
+
+  return (
+    <>
+      <header className="detail-header">
+        <button className="nav-button" type="button" onClick={onBack}>
+          <ChevronLeftIcon />
+          蓝牙
+        </button>
+        <button className="danger-text-button" type="button" onClick={() => onDelete(device.id)}>
+          删除
+        </button>
+      </header>
+
+      <section className="detail-hero">
+        <DeviceGlyph kind={device.kind} isAirpods={device.isAirpods} />
+        <h1>{device.name}</h1>
+        <p>{statusCopy[device.status]}</p>
+        <ConnectionSwitch
+          checked={device.status === "Connected"}
+          label={`${device.name} ${device.status === "Connected" ? "断开" : "连接"}`}
+          onChange={() => onConnect(device)}
+        />
+      </section>
+
+      <section className="info-group" aria-label="蓝牙信息">
+        <InfoRow label="名称" value={device.name} />
+        <InfoRow label="蓝牙地址" value={device.address} />
+        <InfoRow label="设备类型" value={device.kind} />
+        <InfoRow label="信号强度" value={`${device.signal}%`} />
+        <InfoRow label="电量" value={device.battery === null ? "外接供电" : `${device.battery}%`} />
+        <InfoRow label="音频角色" value={device.audioRole ?? "无"} />
+      </section>
+
+      <section className="detail-actions" aria-label="设备操作">
+        <button className="primary-action" type="button" onClick={() => onConnect(device)}>
+          {device.status === "Connected" ? "断开连接" : "发起连接"}
+        </button>
+        <button className="secondary-action" type="button" onClick={() => onUseAudio(device.id)}>
+          设为音频输出
+        </button>
+      </section>
+    </>
+  );
+}
+
+function AirPodsConnectCard({
+  airpods,
+  outputName,
+  onClose,
+}: {
+  airpods: AirPodsStatus;
+  outputName: string;
+  onClose: () => void;
+}) {
+  return (
+    <section className="airpods-card" aria-label="AirPods 连接弹窗">
+      <button className="airpods-close" type="button" aria-label="关闭 AirPods 弹窗" onClick={onClose}>
+        <CloseIcon />
+      </button>
+      <AirPodsIllustration />
+      <div className="airpods-copy">
+        <h1>{airpods.model}</h1>
+        <p>已连接到 {outputName}</p>
+      </div>
+      <div className="airpods-battery" aria-label="AirPods 电量">
+        <BatteryCell label="左耳" value={airpods.leftBattery} />
+        <BatteryCell label="右耳" value={airpods.rightBattery} />
+        <BatteryCell label="充电盒" value={airpods.caseBattery} />
+      </div>
+      <div className="airpods-meta">
+        <InfoRow label="降噪模式" value={airpods.noiseMode} />
+        <InfoRow label="麦克风" value={airpods.microphone} />
+      </div>
+      <button className="primary-action" type="button" onClick={onClose}>
+        完成
+      </button>
+    </section>
+  );
+}
+
+function ConnectionSwitch({
+  checked,
+  label,
+  onChange,
+}: {
+  checked: boolean;
+  label: string;
+  onChange: (event: React.MouseEvent<HTMLButtonElement>) => void;
+}) {
+  return (
+    <button
+      className={`ios-switch ${checked ? "checked" : ""}`}
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      onClick={onChange}
+    >
+      <span />
+    </button>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="info-row">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
 }
 
 function BatteryCell({ label, value }: { label: string; value: number }) {
@@ -340,22 +653,6 @@ function BatteryCell({ label, value }: { label: string; value: number }) {
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="metric">
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
-  );
-}
-
-function NavIcon({ name }: { name: string }) {
-  if (name === "airpods") return <AirPodsTinyIcon />;
-  if (name === "audio") return <AudioIcon />;
-  if (name === "spark") return <SparkIcon />;
-  return <BluetoothIcon />;
-}
-
 function DeviceGlyph({ kind, isAirpods }: { kind: string; isAirpods: boolean }) {
   return <span className={`device-glyph ${isAirpods ? "airpods" : ""}`}>{isAirpods ? <AirPodsTinyIcon /> : <KindIcon kind={kind} />}</span>;
 }
@@ -364,6 +661,7 @@ function KindIcon({ kind }: { kind: string }) {
   if (kind === "Mouse") return <MouseIcon />;
   if (kind === "Keyboard") return <KeyboardIcon />;
   if (kind === "Speaker") return <AudioIcon />;
+  if (kind === "Headphones") return <AirPodsTinyIcon />;
   return <BluetoothIcon />;
 }
 
@@ -371,14 +669,6 @@ function BluetoothIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="m7.5 6.4 9 11.2-4.5 3.1V3.3l4.5 3.1-9 11.2" />
-    </svg>
-  );
-}
-
-function SearchIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="m15.7 15.7 4.1 4.1M18 10.8a7.2 7.2 0 1 1-14.4 0 7.2 7.2 0 0 1 14.4 0Z" />
     </svg>
   );
 }
@@ -392,11 +682,18 @@ function RefreshIcon({ active }: { active: boolean }) {
   );
 }
 
-function PowerIcon() {
+function ChevronLeftIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 3v8" />
-      <path d="M7.2 6.6a8 8 0 1 0 9.6 0" />
+      <path d="m15 5-7 7 7 7" />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M7 7l10 10M17 7 7 17" />
     </svg>
   );
 }
@@ -434,15 +731,6 @@ function KeyboardIcon() {
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M4.5 6.5h15A2.5 2.5 0 0 1 22 9v6a2.5 2.5 0 0 1-2.5 2.5h-15A2.5 2.5 0 0 1 2 15V9a2.5 2.5 0 0 1 2.5-2.5Z" />
       <path d="M6 10h.1M10 10h.1M14 10h.1M18 10h.1M6 14h8" />
-    </svg>
-  );
-}
-
-function SparkIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 3.8 13.7 9l5.4 1.7-5.4 1.7L12 17.6l-1.7-5.2-5.4-1.7L10.3 9 12 3.8Z" />
-      <path d="m18.5 15.3.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z" />
     </svg>
   );
 }
