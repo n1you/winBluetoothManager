@@ -1,4 +1,5 @@
 :root {
+  /* 全局基础视觉：透明背景配合 Tauri 浮窗，字体使用系统 UI 字体。 */
   color: oklch(20% 0.008 260);
   background: transparent;
   font-family:
@@ -47,6 +48,7 @@ svg {
   stroke-width: 1.8;
 }
 
+/* 应用外层舞台，只负责撑满窗口并给浮层留边距。 */
 .stage {
   width: 100%;
   height: 100%;
@@ -55,6 +57,7 @@ svg {
   background: transparent;
 }
 
+/* 主浮窗容器，模拟移动系统蓝牙面板的圆角、阴影和滚动区域。 */
 .phone-popover {
   position: relative;
   width: 100%;
@@ -77,6 +80,7 @@ svg {
   display: none;
 }
 
+/* 顶部窗口栏：左侧是窗口控制点，中间短横用于暗示可拖拽。 */
 .window-bar {
   min-height: 23px;
   display: grid;
@@ -121,6 +125,7 @@ svg {
   background: oklch(72% 0.004 260);
 }
 
+/* 页面通用标题区：列表页和详情页共享。 */
 .popover-header,
 .detail-header {
   min-height: 37px;
@@ -199,6 +204,7 @@ h2 {
   height: 18px;
 }
 
+/* 当前连接摘要卡，展示已连接设备和蓝牙适配器名称。 */
 .connection-summary {
   min-height: 63px;
   margin-top: 8px;
@@ -264,6 +270,7 @@ h2 {
   margin-top: 14px;
 }
 
+/* 设备列表区域：每一行都可以左滑露出删除按钮。 */
 .section-title {
   min-height: 24px;
   padding: 0 3px;
@@ -404,6 +411,7 @@ h2 {
   white-space: nowrap;
 }
 
+/* iOS 风格开关，用 checked 类控制滑块位置和绿色状态。 */
 .ios-switch {
   position: relative;
   width: 45px;
@@ -439,6 +447,7 @@ h2 {
   transform: translateX(17px);
 }
 
+/* 详情页：上方是设备头像和开关，下方是信息行与操作按钮。 */
 .detail-header {
   margin-bottom: 4px;
 }
@@ -566,6 +575,7 @@ h2 {
   text-align: center;
 }
 
+/* AirPods 弹窗：包含 CSS 绘制的耳机、充电盒、电量格和元信息。 */
 .airpods-card {
   position: relative;
   padding: 7px 2px 0;
@@ -700,6 +710,7 @@ h2 {
   background: oklch(68% 0.15 150);
 }
 
+/* 底部状态提示，由 App 里的 toast 文案驱动。 */
 .toast {
   min-height: 18px;
   margin-top: 8px;
@@ -709,6 +720,7 @@ h2 {
   text-align: center;
 }
 
+/* 刷新按钮旋转动画。 */
 .spinning {
   animation: spin 700ms linear infinite;
 }
@@ -719,6 +731,7 @@ h2 {
   }
 }
 
+/* 小屏下收紧 AirPods 插画的水平位置，避免溢出浮窗。 */
 @media (max-width: 420px) {
   .stage {
     padding: 10px;
