@@ -1,4 +1,14 @@
-import { AirPodsTinyIcon, AudioIcon, BluetoothIcon, KeyboardIcon, MouseIcon } from "./icons";
+import {
+  AirPodsTinyIcon,
+  AudioIcon,
+  BluetoothIcon,
+  ComputerIcon,
+  KeyboardIcon,
+  MouseIcon,
+  PhoneIcon,
+  TrackpadIcon,
+  WatchIcon,
+} from "./icons";
 
 /**
  * 根据设备类型决定列表和详情里的图标外观。
@@ -15,9 +25,13 @@ export function DeviceGlyph({ kind, isAirpods }: { kind: string; isAirpods: bool
  * 普通设备类型到图标组件的映射。
  */
 function KindIcon({ kind }: { kind: string }) {
+  if (kind === "Computer") return <ComputerIcon />;
+  if (kind === "Phone") return <PhoneIcon />;
+  if (kind === "Watch") return <WatchIcon />;
   if (kind === "Mouse") return <MouseIcon />;
   if (kind === "Keyboard") return <KeyboardIcon />;
   if (kind === "Speaker") return <AudioIcon />;
+  if (kind === "Trackpad") return <TrackpadIcon />;
   if (kind === "Headphones") return <AirPodsTinyIcon />;
   return <BluetoothIcon />;
 }

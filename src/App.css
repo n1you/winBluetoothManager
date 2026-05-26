@@ -1,13 +1,13 @@
 :root {
-  /* 全局基础视觉：透明背景配合 Tauri 浮窗，字体使用系统 UI 字体。 */
-  color: oklch(20% 0.008 260);
+  /* Tauri 透明窗口上的深色蓝牙面板，字体贴近系统 UI。 */
+  color: oklch(91% 0.012 270);
   background: transparent;
   font-family:
     -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui,
     sans-serif;
   font-size: 16px;
   font-synthesis: none;
-  line-height: 1.32;
+  line-height: 1.28;
   text-rendering: geometricPrecision;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -36,7 +36,7 @@ button {
 }
 
 button:focus-visible {
-  outline: 2px solid oklch(62% 0.16 252 / 0.58);
+  outline: 2px solid oklch(68% 0.18 260 / 0.72);
   outline-offset: 2px;
 }
 
@@ -48,31 +48,32 @@ svg {
   stroke-width: 1.8;
 }
 
-/* 应用外层舞台，只负责撑满窗口并给浮层留边距。 */
 .stage {
   width: 100%;
   height: 100%;
   padding: 14px;
   display: grid;
+  place-items: center;
   background: transparent;
 }
 
-/* 主浮窗容器，模拟移动系统蓝牙面板的圆角、阴影和滚动区域。 */
 .phone-popover {
   position: relative;
   width: 100%;
   height: 100%;
-  padding: 8px 13px 12px;
+  max-width: 632px;
+  max-height: 721px;
+  padding: 8px 14px 14px;
   overflow: hidden auto;
-  border: 1px solid oklch(80% 0.006 260 / 0.72);
+  border: 1px solid oklch(45% 0.03 270 / 0.54);
   border-radius: 24px;
   background:
-    linear-gradient(180deg, oklch(98.4% 0.003 260), oklch(95.5% 0.004 260)),
-    oklch(96.6% 0.004 260);
+    linear-gradient(180deg, oklch(21% 0.018 270), oklch(16.5% 0.014 270)),
+    oklch(18% 0.015 270);
   box-shadow:
-    0 26px 58px oklch(20% 0.012 260 / 0.22),
-    0 7px 18px oklch(20% 0.012 260 / 0.1),
-    inset 0 1px 0 oklch(100% 0.004 260 / 0.68);
+    0 30px 62px oklch(5% 0.018 270 / 0.44),
+    0 8px 20px oklch(5% 0.018 270 / 0.24),
+    inset 0 1px 0 oklch(100% 0.004 270 / 0.08);
   scrollbar-width: none;
 }
 
@@ -80,9 +81,8 @@ svg {
   display: none;
 }
 
-/* 顶部窗口栏：左侧是窗口控制点，中间短横用于暗示可拖拽。 */
 .window-bar {
-  min-height: 23px;
+  min-height: 22px;
   display: grid;
   grid-template-columns: 64px minmax(0, 1fr) 64px;
   align-items: center;
@@ -106,7 +106,7 @@ svg {
   padding: 0;
   border-radius: 50%;
   cursor: pointer;
-  box-shadow: inset 0 0 0 1px oklch(22% 0.012 260 / 0.14);
+  box-shadow: inset 0 0 0 1px oklch(9% 0.015 270 / 0.3);
 }
 
 .window-control.close {
@@ -122,13 +122,12 @@ svg {
   height: 4px;
   margin: 0 auto;
   border-radius: 999px;
-  background: oklch(72% 0.004 260);
+  background: oklch(41% 0.012 270);
 }
 
-/* 页面通用标题区：列表页和详情页共享。 */
 .popover-header,
 .detail-header {
-  min-height: 37px;
+  min-height: 58px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -136,10 +135,10 @@ svg {
 }
 
 .eyebrow {
-  margin: 0 0 1px;
-  color: oklch(46% 0.012 260);
-  font-size: 0.67rem;
-  font-weight: 650;
+  margin: 0 0 2px;
+  color: oklch(60% 0.025 270);
+  font-size: 0.68rem;
+  font-weight: 700;
   letter-spacing: 0;
   text-transform: uppercase;
 }
@@ -151,17 +150,20 @@ p {
 }
 
 h1 {
-  color: oklch(18% 0.009 260);
-  font-size: 1.42rem;
-  font-weight: 760;
+  color: oklch(65% 0.22 262);
+  font-size: 1.7rem;
+  font-weight: 800;
   letter-spacing: 0;
 }
 
 h2 {
-  color: oklch(22% 0.009 260);
-  font-size: 0.88rem;
-  font-weight: 700;
+  overflow: hidden;
+  color: oklch(74% 0.012 270);
+  font-size: 0.78rem;
+  font-weight: 650;
   letter-spacing: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .icon-button,
@@ -172,24 +174,24 @@ h2 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: oklch(42% 0.12 252);
+  color: oklch(78% 0.018 270);
   background: transparent;
   cursor: pointer;
 }
 
 .icon-button {
-  width: 31px;
-  min-height: 31px;
+  width: 34px;
+  min-height: 34px;
   border-radius: 50%;
-  color: oklch(35% 0.012 260);
-  background: oklch(92.5% 0.004 260);
+  color: oklch(70% 0.018 270);
+  background: transparent;
   transition:
-    background 180ms cubic-bezier(0.22, 1, 0.36, 1),
-    transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+    color 170ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 170ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .icon-button:hover {
-  background: oklch(89.4% 0.005 260);
+  color: oklch(91% 0.014 270);
   transform: translateY(-1px);
 }
 
@@ -198,102 +200,49 @@ h2 {
 .danger-text-button svg,
 .airpods-close svg,
 .device-glyph svg,
-.summary-icon svg,
 .swipe-hint svg {
   width: 18px;
   height: 18px;
 }
 
-/* 当前连接摘要卡，展示已连接设备和蓝牙适配器名称。 */
-.connection-summary {
-  min-height: 63px;
-  margin-top: 8px;
-  padding: 10px;
-  display: grid;
-  grid-template-columns: 38px minmax(0, 1fr);
-  align-items: center;
-  gap: 10px;
-  border-radius: 13px;
-  background: oklch(99% 0.002 260 / 0.84);
-  box-shadow:
-    inset 0 0 0 1px oklch(83% 0.006 260 / 0.5),
-    0 8px 18px oklch(32% 0.012 260 / 0.035);
-}
-
-.summary-icon,
-.device-glyph {
-  width: 38px;
-  height: 38px;
-  display: grid;
-  flex: 0 0 auto;
-  place-items: center;
-  color: oklch(36% 0.012 260);
-  border-radius: 10px;
-  background: oklch(91.8% 0.004 260);
-}
-
-.summary-icon {
-  color: oklch(97.5% 0.004 252);
-  background: oklch(55% 0.13 252);
-}
-
-.connection-summary span,
-.battery-cell span,
-.info-row span,
-.device-meta,
-.section-title span {
-  color: oklch(48% 0.015 260);
-  font-size: 0.76rem;
-}
-
-.connection-summary strong {
-  display: block;
-  overflow: hidden;
-  margin-top: 2px;
-  color: oklch(18% 0.009 260);
-  font-size: 0.95rem;
-  font-weight: 710;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.connection-summary p {
-  overflow: hidden;
-  margin-top: 2px;
-  color: oklch(50% 0.014 260);
-  font-size: 0.74rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .list-section {
-  margin-top: 14px;
+  margin-top: 2px;
 }
 
-/* 设备列表区域：每一行都可以左滑露出删除按钮。 */
 .section-title {
-  min-height: 24px;
-  padding: 0 3px;
+  min-height: 20px;
+  padding: 0 4px 7px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
 }
 
+.section-title span,
+.device-meta,
+.battery-percent,
+.connection-summary span,
+.battery-cell span,
+.info-row span {
+  color: oklch(68% 0.012 270);
+  font-size: 0.76rem;
+}
+
 .device-list {
   overflow: hidden;
-  border-radius: 13px;
-  background: oklch(99% 0.002 260 / 0.92);
+  border: 1px solid oklch(31% 0.022 270 / 0.9);
+  border-radius: 14px;
+  background: oklch(19.5% 0.014 270);
   box-shadow:
-    inset 0 0 0 1px oklch(84% 0.006 260 / 0.42),
-    0 9px 20px oklch(32% 0.012 260 / 0.035);
+    0 10px 20px oklch(5% 0.018 270 / 0.18),
+    inset 0 1px 0 oklch(100% 0.004 270 / 0.04);
 }
 
 .swipe-row {
   position: relative;
-  min-height: 58px;
+  min-height: 62px;
   overflow: hidden;
-  background: oklch(99% 0.002 260);
+  background: oklch(19.5% 0.014 270);
 }
 
 .swipe-row + .swipe-row .row-surface::before {
@@ -303,40 +252,40 @@ h2 {
   left: 62px;
   height: 1px;
   content: "";
-  background: oklch(86% 0.004 260 / 0.72);
+  background: oklch(29% 0.016 270 / 0.78);
 }
 
 .row-surface {
   position: relative;
   z-index: 1;
   width: 100%;
-  min-height: 58px;
+  min-height: 62px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 48px;
+  grid-template-columns: minmax(0, 1fr) 86px;
   align-items: center;
-  gap: 6px;
-  padding-right: 9px;
+  gap: 8px;
+  padding-right: 8px;
   color: inherit;
   text-align: left;
-  background: oklch(99% 0.002 260);
+  background: oklch(19.5% 0.014 270);
   transform: translateX(0);
   transition:
-    background 180ms cubic-bezier(0.22, 1, 0.36, 1),
-    transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+    background 170ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 210ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .row-surface:hover {
-  background: oklch(96.8% 0.003 260);
+  background: oklch(22.5% 0.016 270);
 }
 
 .row-main {
   min-width: 0;
-  min-height: 58px;
-  padding: 8px 0 8px 10px;
+  min-height: 62px;
+  padding: 9px 0 9px 12px;
   display: grid;
   grid-template-columns: 38px minmax(0, 1fr);
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   color: inherit;
   text-align: left;
   background: transparent;
@@ -352,12 +301,12 @@ h2 {
   position: absolute;
   z-index: 2;
   top: 50%;
-  right: 3px;
-  width: 22px;
-  height: 40px;
+  right: 0;
+  width: 24px;
+  height: 42px;
   display: grid;
   place-items: center;
-  color: oklch(64% 0.012 260);
+  color: oklch(52% 0.014 270);
   background: transparent;
   cursor: pointer;
   transform: translateY(-50%);
@@ -372,10 +321,10 @@ h2 {
   position: absolute;
   inset: 0 0 0 auto;
   width: 78px;
-  color: oklch(99% 0.004 20);
+  color: oklch(98% 0.006 20);
   font-size: 0.95rem;
-  font-weight: 700;
-  background: oklch(55% 0.17 28);
+  font-weight: 750;
+  background: oklch(58% 0.19 28);
   cursor: pointer;
   opacity: 0;
   transition: opacity 120ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -385,22 +334,32 @@ h2 {
   opacity: 1;
 }
 
+.device-glyph {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  color: oklch(78% 0.014 270);
+  border-radius: 10px;
+  background: transparent;
+}
+
 .device-glyph.airpods {
-  color: oklch(97.5% 0.004 252);
-  background: oklch(55% 0.13 252);
+  color: oklch(92% 0.01 270);
 }
 
 .device-copy {
   min-width: 0;
   display: grid;
-  gap: 2px;
+  gap: 3px;
 }
 
 .device-name {
   overflow: hidden;
-  color: oklch(19% 0.009 260);
-  font-size: 0.94rem;
-  font-weight: 670;
+  color: oklch(91% 0.011 270);
+  font-size: 0.98rem;
+  font-weight: 780;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -411,14 +370,67 @@ h2 {
   white-space: nowrap;
 }
 
-/* iOS 风格开关，用 checked 类控制滑块位置和绿色状态。 */
+.battery-indicator {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.battery-percent {
+  min-width: 34px;
+  color: oklch(86% 0.012 270);
+  font-weight: 680;
+  text-align: right;
+}
+
+.battery-icon {
+  position: relative;
+  width: 36px;
+  height: 18px;
+  padding: 3px;
+  display: block;
+  border: 2px solid oklch(70% 0.014 270);
+  border-radius: 6px;
+  background: oklch(14% 0.012 270);
+}
+
+.battery-icon::after {
+  position: absolute;
+  top: 5px;
+  right: -5px;
+  width: 3px;
+  height: 6px;
+  border-radius: 0 999px 999px 0;
+  content: "";
+  background: oklch(70% 0.014 270);
+}
+
+.battery-icon span {
+  height: 100%;
+  display: block;
+  min-width: 3px;
+  max-width: 100%;
+  border-radius: 3px;
+  background: oklch(70% 0.18 142);
+}
+
+.battery-icon.active {
+  border-color: oklch(72% 0.2 142);
+}
+
+.battery-icon.active::after {
+  background: oklch(72% 0.2 142);
+}
+
 .ios-switch {
   position: relative;
   width: 45px;
   height: 28px;
   padding: 0;
   border-radius: 999px;
-  background: oklch(79.5% 0.006 260);
+  background: oklch(38% 0.015 270);
   cursor: pointer;
   transition:
     background 180ms cubic-bezier(0.22, 1, 0.36, 1),
@@ -432,42 +444,42 @@ h2 {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: oklch(99% 0.002 260);
+  background: oklch(94% 0.006 270);
   box-shadow:
-    0 2px 7px oklch(24% 0.014 260 / 0.26),
-    0 1px 2px oklch(24% 0.014 260 / 0.14);
+    0 2px 7px oklch(5% 0.014 270 / 0.38),
+    0 1px 2px oklch(5% 0.014 270 / 0.22);
   transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .ios-switch.checked {
-  background: oklch(68% 0.15 150);
+  background: oklch(70% 0.18 142);
 }
 
 .ios-switch.checked span {
   transform: translateX(17px);
 }
 
-/* 详情页：上方是设备头像和开关，下方是信息行与操作按钮。 */
 .detail-header {
+  min-height: 40px;
   margin-bottom: 4px;
 }
 
 .nav-button {
   gap: 2px;
   padding: 0;
-  font-weight: 620;
+  font-weight: 650;
 }
 
 .danger-text-button {
-  color: oklch(56% 0.2 28);
-  font-weight: 620;
+  color: oklch(66% 0.2 28);
+  font-weight: 650;
 }
 
 .detail-hero {
-  padding: 10px 12px 11px;
+  padding: 10px 12px 14px;
   display: grid;
   justify-items: center;
-  gap: 5px;
+  gap: 6px;
   text-align: center;
 }
 
@@ -475,6 +487,7 @@ h2 {
   width: 62px;
   height: 62px;
   border-radius: 16px;
+  background: oklch(22% 0.016 270);
 }
 
 .detail-hero .device-glyph svg {
@@ -485,11 +498,12 @@ h2 {
 .detail-hero h1 {
   max-width: 100%;
   overflow-wrap: anywhere;
+  color: oklch(92% 0.011 270);
   font-size: 1.16rem;
 }
 
 .detail-hero p {
-  color: oklch(49% 0.015 260);
+  color: oklch(70% 0.014 270);
   font-size: 0.82rem;
 }
 
@@ -500,14 +514,14 @@ h2 {
 .info-group,
 .airpods-meta {
   overflow: hidden;
-  border-radius: 13px;
-  background: oklch(99% 0.002 260 / 0.92);
-  box-shadow: inset 0 0 0 1px oklch(84% 0.006 260 / 0.42);
+  border: 1px solid oklch(31% 0.022 270 / 0.9);
+  border-radius: 14px;
+  background: oklch(19.5% 0.014 270);
 }
 
 .info-row {
-  min-height: 37px;
-  padding: 7px 12px;
+  min-height: 39px;
+  padding: 8px 12px;
   display: grid;
   grid-template-columns: minmax(88px, auto) minmax(0, 1fr);
   align-items: center;
@@ -515,14 +529,14 @@ h2 {
 }
 
 .info-row + .info-row {
-  border-top: 1px solid oklch(86% 0.004 260 / 0.72);
+  border-top: 1px solid oklch(29% 0.016 270 / 0.78);
 }
 
 .info-row strong {
   overflow: hidden;
-  color: oklch(20% 0.009 260);
+  color: oklch(88% 0.011 270);
   font-size: 0.81rem;
-  font-weight: 590;
+  font-weight: 610;
   text-align: right;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -531,7 +545,7 @@ h2 {
 .detail-actions {
   margin-top: 10px;
   display: grid;
-  gap: 6px;
+  gap: 7px;
 }
 
 .primary-action,
@@ -539,7 +553,7 @@ h2 {
   min-height: 38px;
   border-radius: 11px;
   cursor: pointer;
-  font-weight: 700;
+  font-weight: 750;
   transition:
     background 180ms cubic-bezier(0.22, 1, 0.36, 1),
     transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -547,15 +561,15 @@ h2 {
 
 .primary-action {
   color: oklch(98% 0.004 250);
-  background: oklch(54% 0.14 252);
+  background: oklch(58% 0.18 262);
   box-shadow:
-    0 8px 18px oklch(54% 0.14 252 / 0.14),
-    inset 0 1px 0 oklch(100% 0 0 / 0.18);
+    0 8px 18px oklch(58% 0.18 262 / 0.18),
+    inset 0 1px 0 oklch(100% 0 0 / 0.16);
 }
 
 .secondary-action {
-  color: oklch(38% 0.09 252);
-  background: oklch(92.5% 0.01 252);
+  color: oklch(82% 0.075 262);
+  background: oklch(27% 0.035 270);
 }
 
 .primary-action:hover,
@@ -571,11 +585,10 @@ h2 {
 }
 
 .empty-state p {
-  color: oklch(49% 0.02 260);
+  color: oklch(72% 0.014 270);
   text-align: center;
 }
 
-/* AirPods 弹窗：包含 CSS 绘制的耳机、充电盒、电量格和元信息。 */
 .airpods-card {
   position: relative;
   padding: 7px 2px 0;
@@ -592,8 +605,8 @@ h2 {
   width: 31px;
   min-height: 31px;
   border-radius: 50%;
-  color: oklch(45% 0.016 260);
-  background: oklch(91.5% 0.005 260);
+  color: oklch(78% 0.018 270);
+  background: oklch(24% 0.018 270);
 }
 
 .airpods-illustration {
@@ -607,10 +620,10 @@ h2 {
 .case {
   position: absolute;
   display: block;
-  background: linear-gradient(180deg, oklch(99% 0.002 250), oklch(89% 0.006 260));
+  background: linear-gradient(180deg, oklch(96% 0.004 260), oklch(78% 0.008 270));
   box-shadow:
-    0 13px 26px oklch(34% 0.016 260 / 0.15),
-    inset 0 1px 0 oklch(100% 0 0 / 0.9);
+    0 13px 26px oklch(5% 0.016 270 / 0.34),
+    inset 0 1px 0 oklch(100% 0 0 / 0.78);
 }
 
 .bud {
@@ -637,7 +650,7 @@ h2 {
   width: 13px;
   height: 52px;
   border-radius: 999px;
-  background: linear-gradient(180deg, oklch(97% 0.003 260), oklch(86% 0.006 260));
+  background: linear-gradient(180deg, oklch(91% 0.006 270), oklch(71% 0.01 270));
 }
 
 .case {
@@ -655,7 +668,7 @@ h2 {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: oklch(76% 0.01 260);
+  background: oklch(62% 0.015 270);
   transform: translateX(-50%);
 }
 
@@ -666,11 +679,12 @@ h2 {
 }
 
 .airpods-copy h1 {
+  color: oklch(92% 0.011 270);
   font-size: 1.28rem;
 }
 
 .airpods-copy p {
-  color: oklch(49% 0.015 260);
+  color: oklch(70% 0.014 270);
   font-size: 0.82rem;
 }
 
@@ -685,13 +699,13 @@ h2 {
   padding: 8px;
   display: grid;
   gap: 4px;
+  border: 1px solid oklch(31% 0.022 270 / 0.9);
   border-radius: 11px;
-  background: oklch(99% 0.002 260 / 0.9);
-  box-shadow: inset 0 0 0 1px oklch(84% 0.006 260 / 0.42);
+  background: oklch(19.5% 0.014 270);
 }
 
 .battery-cell strong {
-  color: oklch(19% 0.009 260);
+  color: oklch(91% 0.011 270);
   font-size: 0.92rem;
   font-weight: 760;
 }
@@ -700,27 +714,25 @@ h2 {
   height: 4px;
   overflow: hidden;
   border-radius: 999px;
-  background: oklch(86% 0.006 260);
+  background: oklch(34% 0.012 270);
 }
 
 .battery-track span {
   height: 100%;
   display: block;
   border-radius: inherit;
-  background: oklch(68% 0.15 150);
+  background: oklch(70% 0.18 142);
 }
 
-/* 底部状态提示，由 App 里的 toast 文案驱动。 */
 .toast {
   min-height: 18px;
   margin-top: 8px;
   padding: 0 4px;
-  color: oklch(50% 0.014 260);
+  color: oklch(67% 0.014 270);
   font-size: 0.74rem;
   text-align: center;
 }
 
-/* 刷新按钮旋转动画。 */
 .spinning {
   animation: spin 700ms linear infinite;
 }
@@ -731,7 +743,6 @@ h2 {
   }
 }
 
-/* 小屏下收紧 AirPods 插画的水平位置，避免溢出浮窗。 */
 @media (max-width: 420px) {
   .stage {
     padding: 10px;
@@ -739,6 +750,18 @@ h2 {
 
   .phone-popover {
     border-radius: 24px;
+  }
+
+  .row-surface {
+    grid-template-columns: minmax(0, 1fr) 78px;
+  }
+
+  .battery-percent {
+    min-width: 30px;
+  }
+
+  .battery-icon {
+    width: 32px;
   }
 
   .bud.left {

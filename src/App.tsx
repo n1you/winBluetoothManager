@@ -49,9 +49,6 @@ function App() {
                 onOpenActions={bluetooth.setOpenActionId}
                 onOpenDetail={bluetooth.openDetail}
                 onRefresh={bluetooth.refreshSnapshot}
-                onToggle={(device) => {
-                  void bluetooth.toggleConnection(device);
-                }}
               />
             ) : (
               <DeviceDetail

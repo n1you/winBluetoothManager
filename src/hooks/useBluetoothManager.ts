@@ -10,7 +10,7 @@ export function useBluetoothManager() {
   const [snapshot, setSnapshot] = useState<DeviceSnapshot>(fallbackSnapshot);
   const [selectedId, setSelectedId] = useState(fallbackSnapshot.devices[0]?.id ?? "");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
-  const [showAirpodsCard, setShowAirpodsCard] = useState(fallbackSnapshot.airpods.connected);
+  const [showAirpodsCard, setShowAirpodsCard] = useState(false);
   const [openActionId, setOpenActionId] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [toast, setToast] = useState("蓝牙已就绪");

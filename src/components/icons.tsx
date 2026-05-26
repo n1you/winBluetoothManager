@@ -91,3 +91,63 @@ export function KeyboardIcon() {
     </svg>
   );
 }
+
+/**
+ * 通用电脑设备图标。
+ */
+export function ComputerIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 5.8h14a1.8 1.8 0 0 1 1.8 1.8v8.2H3.2V7.6A1.8 1.8 0 0 1 5 5.8Z" />
+      <path d="M8.4 19h7.2M10.4 15.8 9.8 19M13.6 15.8l.6 3.2" />
+    </svg>
+  );
+}
+
+/**
+ * 手机设备图标。
+ */
+export function PhoneIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M8.2 3.4h7.6a2 2 0 0 1 2 2v13.2a2 2 0 0 1-2 2H8.2a2 2 0 0 1-2-2V5.4a2 2 0 0 1 2-2Z" />
+      <path d="M10.4 5.8h3.2M11.3 18.1h1.4" />
+    </svg>
+  );
+}
+
+/**
+ * 手表设备图标。
+ */
+export function WatchIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M9.4 4.3h5.2l.8 3.1H8.6l.8-3.1ZM8.6 16.6h6.8l-.8 3.1H9.4l-.8-3.1Z" />
+      <path d="M8.6 7.4h6.8a1.8 1.8 0 0 1 1.8 1.8v5.6a1.8 1.8 0 0 1-1.8 1.8H8.6a1.8 1.8 0 0 1-1.8-1.8V9.2a1.8 1.8 0 0 1 1.8-1.8Z" />
+    </svg>
+  );
+}
+
+/**
+ * 触控板设备图标。
+ */
+export function TrackpadIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5.5 8.1h13a2 2 0 0 1 2 2v5.8h-17v-5.8a2 2 0 0 1 2-2Z" />
+      <path d="M3.5 15.9h17l-1.2 2H4.7l-1.2-2Z" />
+    </svg>
+  );
+}
+
+/**
+ * 设置齿轮图标。
+ */
+export function SettingsIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 8.6a3.4 3.4 0 1 0 0 6.8 3.4 3.4 0 0 0 0-6.8Z" />
+      <path d="m18.1 10 .9-1.8-2-2-1.8.9a6.8 6.8 0 0 0-1.2-.5L13.4 4h-2.8L10 6.6a6.8 6.8 0 0 0-1.2.5L7 6.2l-2 2 .9 1.8a7 7 0 0 0-.5 1.2L2.8 11.8v2.8l2.6.6c.1.4.3.8.5 1.2L5 18.2l2 2 1.8-.9c.4.2.8.4 1.2.5l.6 2.6h2.8l.6-2.6c.4-.1.8-.3 1.2-.5l1.8.9 2-2-.9-1.8c.2-.4.4-.8.5-1.2l2.6-.6v-2.8l-2.6-.6c-.1-.4-.3-.8-.5-1.2Z" />
+    </svg>
+  );
+}
